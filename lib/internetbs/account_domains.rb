@@ -65,7 +65,7 @@ module InternetBS
       end
     end
     
-    def totals
+    def fetch_totals
       @errors.clear
       
       response = Client.get('/domain/count')
