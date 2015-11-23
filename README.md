@@ -68,22 +68,24 @@ InternetBS.api_pwd = "s3kr3t"
 InternetBS.api_uri = "https://api.internet.bs"
 ```
 
-The **InternetBS Client** provides flexibility by allowing you to use whatever credentials you want in whatever environment you want. You can, for instance, add a `:staging` environment if you want:
+The **InternetBS Client** provides flexibility by allowing you to use whatever credentials you want, in whatever environment you want. You can, for instance, add a `:staging` environment if you want:
 ```ruby
 InternetBS.credentials[:staging][:api_key] = "44CD64EEEFFF887755560B"
 InternetBS.credentials[:staging][:api_pwd] = "another_pass"
 InternetBS.credentials[:staging][:api_uri] = "https://api.internet.bs"
 ```
 
-You can query the current environments also:
+You can query the current list of environments:
 ```ruby
 InternetBS.environments #=> [:production, :test, :development, :staging]
 ```
 
-And the current environment:
+And the currently selected environment:
 ```ruby
 InternetBS.environment #=> :development
 ```
+
+The current environment operates independently of any other framework environment, e.g. `Rails.env` or `Rack.env`. You can of course manipulate them to synchronize manually.
 
 ### API Calls
 The **InternetBS Client** provides access to the following Internet.bs API endpoints:
@@ -131,7 +133,7 @@ API Endpoint | Description
 [Domain/Trade](https://internetbs.net/ResellerRegistrarDomainNameAPI/api/04_transfer_trade/08_domain_trade) | The command is used to initiate a .fr/.re/.pm/.yt/.tf/.wf trade.
 [Domain/ChangeTag/DotUK](https://internetbs.net/ResellerRegistrarDomainNameAPI/api/04_transfer_trade/09_domain_change_tag_uk) | The command is intended for transferring away a .uk domain.
 
-The **InternetBS Client** *does not* provide access to the following Internet.bs API endpoints and not currently slated for inclusion since they not likely to be required by the Brightcommerce API. If there are significant requests for these endpoints to be included we'll consider adding them. If you would like to add them yourself, we'll be happy to accept merge requests as long as the coding style remains congruent. 
+The **InternetBS Client** *does not* provide access to the following Internet.bs API endpoints and are not currently slated for inclusion since they are not likely to be required by the Brightcommerce API. If there are significant requests for these endpoints to be included, we'll consider adding them. If you would like to add them yourself, we'll be happy to accept merge requests as long as the coding style remains congruent. 
 
 API Endpoint | Description
 --- | ---
@@ -153,8 +155,8 @@ We've attempted to make the **InternetBS Client** interface as consistent as pos
 - All requests are `GET` or `POST` requests. The Internet.bs API doesn't accept `PATCH`, `PUT` or `DELETE` requests.
 - Calling read-only endpoints use the `GET` HTTP verb and pass parameters as URL-endcoded.
 - Calling endpoints that make changes, ie. create, update or delete requests, use the `POST` HTTP verb and send parameters as `x-www-form-urlencoded` in the request body.
-- As specified by the Internet.bs API, only SSL-secured endpoints using the HTTPS protocol are called.
-- The resellers API key and password are passed as parameters.
+- As specified by the Internet.bs API, only SSL-secured endpoints using the HTTPS scheme are called.
+- The reseller's API key and password are passed as parameters.
 - The `responseformat` parameter requesting a JSON-encoded response is sent with every request.
 
 The **InternetBS Client** breaks the API into consistent logical domain models. The models are backed by Virtus Model and most provide a `#fetch` method. Where a model performs a specific action the method will be named, and the parameters for the model must be provided as attributes on the class. Every call performs some validation before executing the API call. If the validation fails, the call will exit early, return `false` and any exceptions are made available in the `#errors` collection attribute.
@@ -196,7 +198,7 @@ result = @domains.fetch #=> true
 
 # If the fetch method fails it will return false 
 # and populate the errors collection attribute:
-if result == false
+unless result
   @account.errors.each do |error|
     puts error
   end
@@ -226,7 +228,7 @@ To retrieve the number of domains in an account, the **InternetBS Client** provi
 
 Method | Description
 --- | ---
-`#totals` | Call this method to retrieve the total number of domains. The number of domains can be queried on the `#total_domains` attribute. The total of number for each TLD can be queried on the `#total_domains_by_tld` attribute.
+`#fetch_totals` | Call this method to retrieve the total number of domains. The total number of domains can be queried on the `#total_domains` attribute. The number of domains for each TLD can be queried on the `#total_domains_by_tld` attribute.
 
 ### Account Prices
 Fetch the price list for the current reseller. Prices are returned as a collection of `AccountPrice`.
@@ -237,7 +239,7 @@ result = @prices.fetch #=> true
 
 # If the fetch method fails it will return false 
 # and populate the errors collection attribute:
-if result == false
+unless result
   @prices.errors.each do |error|
     puts error
   end
@@ -300,7 +302,7 @@ unless result
 end
 
 # Is the domain available?
-puts @domain.status #=> true
+puts @domain.available? #=> true
 
 # Other properties you can check:
 puts @domain.transaction_id #=> 234678268342423876
@@ -309,6 +311,9 @@ puts @domain.min_registration_period #=> 1 # year
 puts @domain.private_whois_allowed #=> true
 puts @domain.realtime_registration #=> true
 puts @domain.registrar_lock_allowed #=> true
+
+# You can also heck the status attribute which will return a String containing one of the following: AVAILABLE, UNAVAILABLE or FAILURE:
+puts @domains.status #=> AVAILABLE
 ```
 
 ### Domain Information
@@ -464,7 +469,7 @@ result = @ns.fetch #=> true
 
 # If the fetch method fails it will return false
 # and populate the errors collection attribute:
-if result == false
+unless result
   @ns.errors.each do |err|
     puts err
   end
@@ -512,7 +517,7 @@ result = @dns_records.fetch #=> true
 
 # If the fetch method fails it will return false
 # and populate the errors collection attribute:
-if result == false
+unless result
   @dns_records.errors.each do |err|
     puts err
   end
@@ -561,7 +566,7 @@ result = @private_whois.fetch #=> true
 
 # If the fetch method fails it will return false
 # and populate the errors collection attribute:
-if result == false
+unless result
   @private_whois.errors.each do |err|
     puts err
   end
@@ -584,8 +589,9 @@ This API is intended for checking and/or changing the registrar lock for a domai
 
 result = @registrar_lock.fetch #=> true
 
-# If the fetch method fails it will return false and populate the errors collection attribute:
-if result == false
+# If the fetch method fails it will return false
+# and populate the errors collection attribute:
+unless result
   @registrar_lock.errors.each do |err|
     puts err
   end
@@ -609,7 +615,7 @@ result = @registry_status.fetch #=> true
 
 # If the fetch method fails it will return false
 # and populate the errors collection attribute:
-if result == false
+unless result
   @registry_status.errors.each do |err|
     puts err
   end
@@ -627,7 +633,7 @@ result = @domain.fetch #=> true
 
 # If the fetch method fails it will return false
 # and populate the errors collection attribute:
-if result == false
+unless result
   @domain.errors.each do |err|
     puts err
   end
@@ -682,7 +688,7 @@ result = @order.purchase! #=> true
 
 # If the purchase! method fails it will return false
 # and populate the errors collection attribute:
-if result == false
+unless result
   @order.errors.each do |err|
     puts err
   end
@@ -694,21 +700,40 @@ end
 @order.total_price #=> 13.9
 ```
 
+### Pushing a Domain
+Use this class to change the account that is responsible for managing the domain. Pushing a domain does not automatically change the official Registrant/Admin contacts.
+```ruby
+@domain = InternetBS::DomainPush.new(
+  :domain        => "bigacme.com", # the domain to push
+  :email_address => "jane.doe@somewhere.else.com" # the new manager
+)
+
+result = @domain.push! #=> true
+
+# If the push! method fails it will return false
+# and populate the errors collection attribute:
+unless result
+  @domain.errors.each do |err|
+    puts err
+  end
+end
+```
+
 ### Renewing a Domain
 Use this class to renew a domain. Currency will default to `USD` and the period will default to one year (`1Y`).
 ```ruby
 @renewal = InternetBS::RenewDomain.new(
-  :domain               => "bigacme.com",
-  :currency             => "USD", # default
-  :period               => "1Y", # default
-  :discount_code        => '10PERCENT' # optional
+  :domain        => "bigacme.com",
+  :currency      => "USD", # default
+  :period        => "1Y", # default
+  :discount_code => '10PERCENT' # optional
 )
 
 result = @renewal.purchase! #=> true
 
 # If the purchase! method fails it will return false
 # and populate the errors collection attribute:
-if result == false
+unless result
   @renewal.errors.each do |err|
     puts err
   end
