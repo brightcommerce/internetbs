@@ -772,7 +772,7 @@ TBA - Currently partially tested using reseller account and testapi endpoints.
 - Test suite with mocks for CI/CD scenarios.
 
 ## Acknowledgements
-#### Version 1.0.0
+#### Version >= 1.0.1
 - Jurgen Jocubeit - President & CEO, [Brightcommerce, Inc.](https://twitter.com/brightcommerce)
 
 ## License
